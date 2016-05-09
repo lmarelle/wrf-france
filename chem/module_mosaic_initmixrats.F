@@ -26,8 +26,10 @@
 
 	USE module_state_description
 
-	integer, parameter :: mosaic_init_wrf_mixrats_flagaa = 1
+!lm Set this to 0 if you use bc and ic from wrfinput and wrfbdy
+        integer, parameter :: mosaic_init_wrf_mixrats_flagaa = 0
                             ! turns subr mosaic_init_wrf_mixrats on/off
+!lm
 
 	contains
 
