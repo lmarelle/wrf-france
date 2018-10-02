@@ -301,11 +301,11 @@
                CB05_SORG_AQ_KPP,CB05_SORG_VBS_AQ_KPP)
              isorg=1
              CALL wrf_debug(15,'SORGAM aerosols initialization ')
-         CASE (MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP)
-             CALL wrf_debug(15,'MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP aerosols initialization ')
+         CASE (MOZART_MOSAIC_4BIN_KPP, MOZART_MOSAIC_4BIN_AQ_KPP, MOZART_KPP, MOZCART_KPP, T1_MOZCART_KPP)
+             CALL wrf_debug(15,'MOZART aerosols initialization ')
          CASE DEFAULT
              CALL wrf_debug(15,'no aerosols initialization yet')
-             CALL wrf_message('no aerosols initialization yet')
+             CALL wrf_message('module_ftuv_driver, no aerosols initialization yet')
    END SELECT aer_select
 
 !----------------------------------------------------
