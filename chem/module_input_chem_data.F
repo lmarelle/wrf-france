@@ -69,7 +69,7 @@ MODULE module_input_chem_data
     INTEGER :: kx              ! number of vertical levels in temp profile        
     INTEGER :: kxm1
 
-    PARAMETER( kx=16, kxm1=kx-1, logg=350, lo=34) ! DL (6/2/2013) Changed value of logg from 200 to 350 for additional gas species
+    PARAMETER( kx=16, kxm1=kx-1, logg=450, lo=34) ! DL (6/2/2013) Changed value of logg from 200 to 350 for additional gas species !lm (2018/10/08) Changed logg from 350 to 450
    
     INTEGER, DIMENSION(logg)                     :: iref
 
