@@ -1645,12 +1645,6 @@ is_mozm_species : &
                       IF ( p_in_chem .EQ. p_isoprene ) THEN
                          ebio_iso(i,j)        = ebio_iso(i,j)       + gas_emis
                          e_bio(i,j,p_isoprene-1)   = e_bio(i,j,p_isoprene-1)  + gas_emis*convert2
-                      ELSE IF ( p_in_chem .EQ. p_terp) THEN
-                         ebio_api(i,j)       = ebio_api(i,j)      + gas_emis
-                         e_bio(i,j,p_terp-1)  = e_bio(i,j,p_terp-1) + gas_emis*convert2
-                      ELSE IF ( p_in_chem .EQ. p_sesq) THEN
-                         ebio_lim(i,j)         = ebio_lim(i,j)        + gas_emis
-                         e_bio(i,j,p_sesq-1)    = e_bio(i,j,p_sesq-1)   + gas_emis*convert2
                       ELSE IF ( p_in_chem .EQ. p_no) THEN
                          ebio_no(i,j)         = ebio_no(i,j)        + gas_emis
                          e_bio(i,j,p_no-1)    = e_bio(i,j,p_no-1)   + gas_emis*convert2
