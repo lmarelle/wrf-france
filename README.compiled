@@ -1,7 +1,0 @@
-#-------- This README describes the compiled wrf versions in main/ --------
-#
-# Louis Marelle, 2018/09/27
-#
-
-wrf.exe.base
-  Base WRF-Chem 4.0 with KPP, compiled from the released code, with bug fixes
