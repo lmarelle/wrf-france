@@ -32,7 +32,7 @@ CONTAINS
                      ,skintempclmean,skintempclstd                    & ! CLWRF
                      ,raincv,rainncv                                  &
                      ,dt,xtime,curr_secs2                             &
-                     ,nsteps                                          &
+                     ,actimecl                                        &
                                                                       )
 !----------------------------------------------------------------------
 
@@ -137,7 +137,7 @@ CONTAINS
    REAL                                      :: value
    INTEGER, INTENT(IN)                       :: clwrfH
    CHARACTER (LEN=1024)                      :: message
-   INTEGER, INTENT(INOUT)                    :: nsteps
+   REAL, INTENT(INOUT)                       :: actimecl
    LOGICAL                                   :: is_restart
 ! local vars
    REAL                                      :: t273
@@ -152,39 +152,39 @@ CONTAINS
 !  !$OMP PRIVATE ( ij )
 !  IF ( MOD(NINT(XTIME), clwrfH) == 0 ) THEN
 ! IF (( MOD(NINT(curr_secs2/dt),NINT(clwrfH*60./dt)) == 0) .AND. (.NOT.is_restart)) THEN
-  IF (( MOD(NINT(curr_secs2/dt),NINT(clwrfH*60./dt)) == 0) ) THEN
+  IF ( MOD(NINT(curr_secs2),NINT(clwrfH*60.)) == 0 ) THEN
     DO ij = 1 , num_tiles
       IF  ( wrf_dm_on_monitor() ) THEN
           CALL wrf_debug(0, 'Re-initializing accumulation arrays')
       ENDIF
-      nsteps = 1
+      actimecl = dt/60.
       DO j = j_start(ij), j_end(ij)
         DO i = i_start(ij), i_end(ij)
           t2clmin(i,j)=t2(i,j)-t273
           t2clmax(i,j)=t2(i,j)-t273
-          t2clmean(i,j)=t2(i,j)-t273
-          t2clstd(i,j)=(t2(i,j)-t273)*(t2(i,j)-t273)
+          t2clmean(i,j)=(t2(i,j)-t273)*dt/60.
+          t2clstd(i,j)=((t2(i,j)-t273)*(t2(i,j)-t273))*dt/60.
           q2clmin(i,j)=q2(i,j)
           q2clmax(i,j)=q2(i,j)
-          q2clmean(i,j)=q2(i,j)
-          q2clstd(i,j)=q2(i,j)*q2(i,j)
+          q2clmean(i,j)=(q2(i,j))*dt/60.
+          q2clstd(i,j)=(q2(i,j)*q2(i,j))*dt/60.
           spduv10clmax(i,j)=sqrt(u10(i,j)*u10(i,j)+v10(i,j)*v10(i,j))
-          u10clmean(i,j)=u10(i,j)
-          v10clmean(i,j)=v10(i,j)
-          spduv10clmean(i,j)=sqrt(u10(i,j)*u10(i,j)+v10(i,j)*v10(i,j))
-          u10clstd(i,j)=u10(i,j)*u10(i,j)
-          v10clstd(i,j)=v10(i,j)*v10(i,j)
-          spduv10clstd(i,j)=u10(i,j)*u10(i,j)+v10(i,j)*v10(i,j)
+          u10clmean(i,j)=(u10(i,j))*dt/60.
+          v10clmean(i,j)=(v10(i,j))*dt/60.
+          spduv10clmean(i,j)=(sqrt(u10(i,j)*u10(i,j)+v10(i,j)*v10(i,j)))*dt/60.
+          u10clstd(i,j)=(u10(i,j)*u10(i,j))*dt/60.
+          v10clstd(i,j)=(v10(i,j)*v10(i,j))*dt/60.
+          spduv10clstd(i,j)=(u10(i,j)*u10(i,j)+v10(i,j)*v10(i,j))*dt/60.
           raincclmax(i,j)=raincv(i,j)/dt
           rainncclmax(i,j)=rainncv(i,j)/dt
-          raincclmean(i,j)=raincv(i,j)/dt
-          rainncclmean(i,j)=rainncv(i,j)/dt
-          raincclstd(i,j)=(raincv(i,j)/dt)*(raincv(i,j)/dt)
-          rainncclstd(i,j)=(rainncv(i,j)/dt)*(rainncv(i,j)/dt)
+          raincclmean(i,j)=(raincv(i,j)/dt)*dt/60.
+          rainncclmean(i,j)=(rainncv(i,j)/dt)*dt/60.
+          raincclstd(i,j)=((raincv(i,j)/dt)*(raincv(i,j)/dt))*dt/60.
+          rainncclstd(i,j)=((rainncv(i,j)/dt)*(rainncv(i,j)/dt))*dt/60.
           skintempclmin(i,j)=skintemp(i,j)-t273
           skintempclmax(i,j)=skintemp(i,j)-t273
-          skintempclmean(i,j)=skintemp(i,j)-t273
-          skintempclstd(i,j)=(skintemp(i,j)-t273)*(skintemp(i,j)-t273)
+          skintempclmean(i,j)=(skintemp(i,j)-t273)*dt/60.
+          skintempclstd(i,j)=((skintemp(i,j)-t273)*(skintemp(i,j)-t273))*dt/60.
           ! reinitialize times
           tt2clmin(i,j)       = xtime + dt/60.  ! value at end of timestep 
           tt2clmax(i,j)       = xtime + dt/60.
@@ -198,57 +198,58 @@ CONTAINS
         ENDDO
       ENDDO
     ENDDO
-!    nsteps=clwrfH*60./dt
+!    actimecl=clwrfH*60./dt
   ELSE
     xtimep = xtime + dt/60.   ! value at end of timestep for time info
-    nsteps=nsteps+1
+    actimecl=actimecl+dt/60.
 ! Temperature
           CALL varstatistics(t2-t273,xtimep,ime-ims+1,jme-jms+1,t2clmin,t2clmax,   &
-            tt2clmin,tt2clmax,t2clmean,t2clstd)
+            tt2clmin,tt2clmax,t2clmean,t2clstd,dt)
 ! Water vapor mixing ratio
           CALL varstatistics(q2,xtimep,ime-ims+1,jme-jms+1,q2clmin,q2clmax,   &
-            tq2clmin,tq2clmax,q2clmean,q2clstd)
+            tq2clmin,tq2clmax,q2clmean,q2clstd,dt)
 ! Wind speed
           CALL varstatisticsWIND(u10,v10,xtimep,ime-ims+1,jme-jms+1,u10clmax, &
             v10clmax,spduv10clmax,tspduv10clmax,u10clmean,v10clmean,         &
-            spduv10clmean,u10clstd,v10clstd,spduv10clstd)
+            spduv10clmean,u10clstd,v10clstd,spduv10clstd,dt)
 ! Precipitation flux
           CALL varstatisticsMAX(raincv/dt,xtimep,ime-ims+1,jme-jms+1,         &
-            raincclmax,traincclmax,raincclmean,raincclstd) 
+            raincclmax,traincclmax,raincclmean,raincclstd,dt)
           CALL varstatisticsMAX(rainncv/dt,xtimep,ime-ims+1,jme-jms+1,        &
-            rainncclmax,trainncclmax,rainncclmean,rainncclstd)
+            rainncclmax,trainncclmax,rainncclmean,rainncclstd,dt)
 ! Skin Temperature 
           CALL varstatistics(skintemp-t273,xtimep,ime-ims+1,jme-jms+1,skintempclmin,&
             skintempclmax,tskintempclmin,tskintempclmax,skintempclmean,       &
-            skintempclstd)
+            skintempclstd,dt)
 
 !          IF (MOD(NINT(XTIME),clwrfH) == 0) THEN
 !          IF (MOD(NINT(XTIME+dt/60.),clwrfH) == 0) THEN
-           IF (MOD(NINT((curr_secs2+dt)/dt),NINT(clwrfH*60./dt)) == 0) THEN
+           IF (MOD(NINT(curr_secs2+dt),NINT(clwrfH*60.)) == 0) THEN
              IF  ( wrf_dm_on_monitor() ) &
-               PRINT *,'nsteps=',nsteps,' xtime:', xtime,' clwrfH:',clwrfH
-               t2clmean=t2clmean/nsteps
-               t2clstd=SQRT(MAX(t2clstd/nsteps-t2clmean**2.,0.))
+               PRINT *,'actimecl=',actimecl,' xtime:', xtime,' clwrfH:',clwrfH
+               ! Here, actimecl should be equal to clwrfH*60.
+               t2clmean=t2clmean/actimecl
+               t2clstd=SQRT(MAX(t2clstd/actimecl-t2clmean**2.,0.))
                t2clmean=t2clmean+t273
                t2clmin=t2clmin+t273
                t2clmax=t2clmax+t273
-               q2clmean=q2clmean/nsteps
-               q2clstd=q2clstd/nsteps-q2clmean*q2clmean
+               q2clmean=q2clmean/actimecl
+               q2clstd=q2clstd/actimecl-q2clmean*q2clmean
                q2clstd=MAX(q2clstd,0.)
                q2clstd=SQRT(q2clstd)
-               u10clmean=u10clmean/nsteps
-               v10clmean=v10clmean/nsteps
-               spduv10clmean=spduv10clmean/nsteps
-               u10clstd=SQRT(MAX(u10clstd/nsteps-u10clmean**2., 0.))
-               v10clstd=SQRT(MAX(v10clstd/nsteps-v10clmean**2., 0.))
-               spduv10clstd=SQRT(MAX(spduv10clstd/nsteps-                        &
+               u10clmean=u10clmean/actimecl
+               v10clmean=v10clmean/actimecl
+               spduv10clmean=spduv10clmean/actimecl
+               u10clstd=SQRT(MAX(u10clstd/actimecl-u10clmean**2., 0.))
+               v10clstd=SQRT(MAX(v10clstd/actimecl-v10clmean**2., 0.))
+               spduv10clstd=SQRT(MAX(spduv10clstd/actimecl-                        &
                  spduv10clmean**2, 0.))
-               raincclmean=raincclmean/nsteps
-               rainncclmean=rainncclmean/nsteps
-               raincclstd=SQRT(MAX(raincclstd/nsteps-raincclmean**2., 0.))
-               rainncclstd=SQRT(MAX(rainncclstd/nsteps-rainncclmean**2., 0.))
-               skintempclmean=skintempclmean/nsteps
-               skintempclstd=skintempclstd/nsteps-skintempclmean*skintempclmean
+               raincclmean=raincclmean/actimecl
+               rainncclmean=rainncclmean/actimecl
+               raincclstd=SQRT(MAX(raincclstd/actimecl-raincclmean**2., 0.))
+               rainncclstd=SQRT(MAX(rainncclstd/actimecl-rainncclmean**2., 0.))
+               skintempclmean=skintempclmean/actimecl
+               skintempclstd=skintempclstd/actimecl-skintempclmean*skintempclmean
                skintempclstd=MAX(skintempclstd,0.)
                skintempclstd=SQRT(skintempclstd)
                skintempclmean=skintempclmean+t273
@@ -317,7 +318,7 @@ CONTAINS
 ! UC.CLWRF Nov.09
 SUBROUTINE varstatisticsWIND(varu, varv, tt, dx, dy, varumax, varvmax,       &
   varuvmax, tvaruvmax, varumean, varvmean, varuvmean, varustd, varvstd,     & 
-  varuvstd) 
+  varuvstd, dt)
 ! Subroutine to compute variable statistics for a wind somponents 
 
 IMPLICIT NONE
@@ -325,7 +326,7 @@ IMPLICIT NONE
 INTEGER                                                        :: i, j
 INTEGER, INTENT(IN)                                            :: dx, dy
 REAL, DIMENSION(dx,dy), INTENT(IN)                             :: varu, varv
-REAL, INTENT(IN)                                               :: tt
+REAL, INTENT(IN)                                               :: tt, dt
 REAL, DIMENSION(dx,dy), INTENT(INOUT)                          :: varumax,   &
   varvmax, varuvmax, tvaruvmax, varumean, varvmean, varuvmean, varustd,      & 
   varvstd, varuvstd
@@ -340,19 +341,19 @@ DO i=1,dx
         varuvmax(i,j)=varuv
         tvaruvmax(i,j)=tt
       END IF
-    varuvmean(i,j)=varuvmean(i,j)+varuv
-    varuvstd(i,j)=varuvstd(i,j)+varuv**2
+    varuvmean(i,j)=varuvmean(i,j)+varuv*dt/60.
+    varuvstd(i,j)=varuvstd(i,j)+(varuv**2)*dt/60.
   END DO
 END DO
-varumean=varumean+varu
-varvmean=varvmean+varv
-varustd=varustd+varu*varu
-varvstd=varvstd+varv*varv
+varumean=varumean+varu*dt/60.
+varvmean=varvmean+varv*dt/60.
+varustd=varustd+varu*varu*dt/60.
+varvstd=varvstd+varv*varv*dt/60.
 
 END SUBROUTINE varstatisticsWIND
 
 SUBROUTINE varstatisticsMAX(var, tt, dx, dy, varmax, tvarmax, varmean,       &
-   varstd)
+   varstd, dt)
 ! Subroutine to compute variable statistics for a max only variable values
 
 IMPLICIT NONE
@@ -360,7 +361,7 @@ IMPLICIT NONE
 INTEGER                                                        :: i,j
 INTEGER, INTENT(IN)                                            :: dx, dy
 REAL, DIMENSION(dx,dy), INTENT(IN)                             :: var
-REAL, INTENT(IN)                                               :: tt
+REAL, INTENT(IN)                                               :: tt, dt
 REAL, DIMENSION(dx,dy), INTENT(INOUT)                          :: varmax,    &
   tvarmax, varmean, varstd
 
@@ -372,13 +373,13 @@ DO i=1,dx
     END IF
   END DO
 END DO
-varmean=varmean+var
-varstd=varstd+var*var
+varmean=varmean+var*dt/60.
+varstd=varstd+var*var*dt/60.
 
 END SUBROUTINE varstatisticsMAX 
 
 SUBROUTINE varstatistics(var, tt, dx, dy, varmin, varmax, tvarmin, tvarmax,  & 
-  varmean, varstd) 
+  varmean, varstd, dt)
 ! Subroutine to compute variable statistics
 
 IMPLICIT NONE
@@ -386,7 +387,7 @@ IMPLICIT NONE
 INTEGER                                                        :: i,j
 INTEGER, INTENT(IN)                                            :: dx, dy
 REAL, DIMENSION(dx,dy), INTENT(IN)                             :: var
-REAL, INTENT(IN)                                               :: tt
+REAL, INTENT(IN)                                               :: tt, dt
 REAL, DIMENSION(dx,dy), INTENT(INOUT)                          :: varmin,    &
   varmax, tvarmin, tvarmax, varmean, varstd
 
@@ -402,8 +403,8 @@ DO i=1,dx
     END IF
   END DO
 END DO
-varmean=varmean+var
-varstd=varstd+var*var
+varmean=varmean+var*dt/60.
+varstd=varstd+var*var*dt/60.
 
 END SUBROUTINE varstatistics
 
